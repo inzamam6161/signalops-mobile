@@ -7,4 +7,5 @@ export const appStorage =
 
 export const storageKeys = {
   preferences: 'preferences',
+  incidents: 'incidents-v2',
 } as const;

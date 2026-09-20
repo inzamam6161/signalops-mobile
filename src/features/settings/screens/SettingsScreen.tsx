@@ -1,5 +1,7 @@
 import React from 'react';
 import {
+  Alert,
+  Pressable,
   StyleSheet,
   Switch,
   Text,
@@ -13,6 +15,9 @@ import {
 import {
   setLiveUpdatesEnabled,
 } from '../../../app/store/appSlice';
+import {
+  resetIncidents,
+} from '../../incidents/incidentsSlice';
 import { colors } from '../../../design-system/theme/colors';
 import { spacing } from '../../../design-system/theme/spacing';
 import { Screen } from '../../../shared/components/Screen';
@@ -28,6 +33,26 @@ export function SettingsScreen() {
     value: boolean,
   ) => {
     dispatch(setLiveUpdatesEnabled(value));
+  };
+
+  const resetWorkspace = () => {
+    Alert.alert(
+      'Reset demo workspace?',
+      'This restores bundled incidents and removes local incident changes.',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Reset',
+          style: 'destructive',
+          onPress: () => {
+            dispatch(resetIncidents());
+          },
+        },
+      ],
+    );
   };
 
   return (
@@ -69,6 +94,36 @@ export function SettingsScreen() {
             thumbColor={colors.white}
           />
         </View>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>
+          Workspace
+        </Text>
+
+        <View style={styles.card}>
+          <View style={styles.content}>
+            <Text style={styles.title}>
+              Incident workspace
+            </Text>
+
+            <Text style={styles.description}>
+              Incident lifecycle changes, notes,
+              assignments and runbook progress are
+              persisted on this device.
+            </Text>
+          </View>
+        </View>
+
+        <Pressable
+          accessibilityRole="button"
+          onPress={resetWorkspace}
+          style={styles.resetButton}
+        >
+          <Text style={styles.resetButtonLabel}>
+            Reset demo workspace
+          </Text>
+        </Pressable>
       </View>
 
       <View style={styles.section}>
@@ -178,6 +233,20 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     fontSize: 14,
     fontWeight: '600',
+  },
+  resetButton: {
+    alignItems: 'center',
+    borderColor: colors.danger,
+    borderRadius: 12,
+    borderWidth: 1,
+    justifyContent: 'center',
+    marginTop: spacing.sm,
+    minHeight: 46,
+  },
+  resetButtonLabel: {
+    color: colors.danger,
+    fontSize: 13,
+    fontWeight: '700',
   },
   divider: {
     backgroundColor: colors.border,

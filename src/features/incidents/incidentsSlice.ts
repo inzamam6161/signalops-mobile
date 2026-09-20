@@ -5,6 +5,7 @@ import {
 
 import { mockIncidents } from './data/mockIncidents';
 import type {
+  CreateIncidentPayload,
   Incident,
   IncidentEventType,
   IncidentStatus,
@@ -21,11 +22,36 @@ type StatusUpdatePayload = {
   eventId: string;
   changedAt: string;
   actor: string;
+  resolutionSummary?: string;
 };
 
 type SimulationPayload = {
   eventId: string;
   receivedAt: string;
+};
+
+type NotePayload = {
+  incidentId: string;
+  note: string;
+  eventId: string;
+  createdAt: string;
+  actor: string;
+};
+
+type AssignmentPayload = {
+  incidentId: string;
+  owner: string;
+  team: string;
+  eventId: string;
+  createdAt: string;
+};
+
+type RunbookPayload = {
+  incidentId: string;
+  runbookItemId: string;
+  eventId: string;
+  createdAt: string;
+  actor: string;
 };
 
 const initialState: IncidentsState = {
@@ -44,7 +70,7 @@ function getEventType(
       return 'resolved';
 
     default:
-      return 'live-update';
+      return 'status-changed';
   }
 }
 
@@ -67,10 +93,77 @@ function getStatusMessage(
   }
 }
 
+function buildDefaultRunbook() {
+  return [
+    {
+      id: 'verify-monitoring',
+      label: 'Verify monitoring signal',
+      completed: false,
+    },
+    {
+      id: 'check-deployments',
+      label: 'Check recent deployments',
+      completed: false,
+    },
+    {
+      id: 'notify-stakeholders',
+      label: 'Notify stakeholders',
+      completed: false,
+    },
+    {
+      id: 'apply-mitigation',
+      label: 'Apply mitigation',
+      completed: false,
+    },
+    {
+      id: 'monitor-recovery',
+      label: 'Monitor recovery',
+      completed: false,
+    },
+  ];
+}
+
 const incidentsSlice = createSlice({
   name: 'incidents',
   initialState,
   reducers: {
+    hydrateIncidents: (
+      state,
+      action: PayloadAction<Incident[]>,
+    ) => {
+      if (action.payload.length > 0) {
+        state.items = action.payload;
+      }
+    },
+
+    resetIncidents: state => {
+      state.items = mockIncidents;
+      state.simulationCursor = 0;
+    },
+
+    createIncident: (
+      state,
+      action: PayloadAction<CreateIncidentPayload>,
+    ) => {
+      const payload = action.payload;
+
+      state.items.unshift({
+        ...payload,
+        status: 'ongoing',
+        detectedAt: 'Just now',
+        runbook: buildDefaultRunbook(),
+        timeline: [
+          {
+            id: `${payload.id}-detected`,
+            type: 'detected',
+            message:
+              'Incident created in the SignalOps command center.',
+            createdAt: payload.createdAt,
+          },
+        ],
+      });
+    },
+
     updateIncidentStatus: (
       state,
       action: PayloadAction<StatusUpdatePayload>,
@@ -88,6 +181,28 @@ const incidentsSlice = createSlice({
 
       incident.status = action.payload.status;
 
+      if (
+        action.payload.status === 'investigating' &&
+        !incident.acknowledgedAt
+      ) {
+        incident.acknowledgedAt =
+          action.payload.changedAt;
+      }
+
+      if (action.payload.status === 'monitoring') {
+        incident.monitoringAt =
+          action.payload.changedAt;
+      }
+
+      if (action.payload.status === 'resolved') {
+        incident.resolvedAt =
+          action.payload.changedAt;
+        incident.resolutionSummary =
+          action.payload.resolutionSummary ||
+          incident.resolutionSummary ||
+          'Incident resolved after mitigation and monitoring.';
+      }
+
       incident.timeline.unshift({
         id: action.payload.eventId,
         type: getEventType(action.payload.status),
@@ -96,6 +211,85 @@ const incidentsSlice = createSlice({
           action.payload.actor,
         ),
         createdAt: action.payload.changedAt,
+      });
+    },
+
+    addIncidentNote: (
+      state,
+      action: PayloadAction<NotePayload>,
+    ) => {
+      const incident = state.items.find(
+        item => item.id === action.payload.incidentId,
+      );
+
+      if (!incident) {
+        return;
+      }
+
+      incident.timeline.unshift({
+        id: action.payload.eventId,
+        type: 'note',
+        message: `${action.payload.actor}: ${action.payload.note}`,
+        createdAt: action.payload.createdAt,
+      });
+    },
+
+    assignIncident: (
+      state,
+      action: PayloadAction<AssignmentPayload>,
+    ) => {
+      const incident = state.items.find(
+        item => item.id === action.payload.incidentId,
+      );
+
+      if (!incident) {
+        return;
+      }
+
+      incident.owner = action.payload.owner;
+      incident.team = action.payload.team;
+
+      incident.timeline.unshift({
+        id: action.payload.eventId,
+        type: 'assignment',
+        message: `Incident assigned to ${action.payload.owner} · ${action.payload.team}.`,
+        createdAt: action.payload.createdAt,
+      });
+    },
+
+    toggleRunbookItem: (
+      state,
+      action: PayloadAction<RunbookPayload>,
+    ) => {
+      const incident = state.items.find(
+        item => item.id === action.payload.incidentId,
+      );
+
+      if (!incident) {
+        return;
+      }
+
+      const runbookItem = incident.runbook.find(
+        item =>
+          item.id === action.payload.runbookItemId,
+      );
+
+      if (!runbookItem) {
+        return;
+      }
+
+      runbookItem.completed =
+        !runbookItem.completed;
+
+      incident.timeline.unshift({
+        id: action.payload.eventId,
+        type: 'runbook',
+        message: `${action.payload.actor} ${
+          runbookItem.completed
+            ? 'completed'
+            : 'reopened'
+        } runbook step: ${runbookItem.label}.`,
+        createdAt: action.payload.createdAt,
       });
     },
 
@@ -146,7 +340,13 @@ const incidentsSlice = createSlice({
 });
 
 export const {
+  addIncidentNote,
+  assignIncident,
+  createIncident,
+  hydrateIncidents,
+  resetIncidents,
   simulateIncidentUpdate,
+  toggleRunbookItem,
   updateIncidentStatus,
 } = incidentsSlice.actions;
 

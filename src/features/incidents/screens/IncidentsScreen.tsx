@@ -6,6 +6,7 @@ import React, {
 } from 'react';
 import {
   FlatList,
+  Pressable,
   StyleSheet,
   Text,
   View,
@@ -100,14 +101,28 @@ export function IncidentsScreen() {
 
   const listHeader = useMemo(
     () => (
-      <IncidentFilters
-        query={query}
-        selectedSeverity={selectedSeverity}
-        onQueryChange={setQuery}
-        onSeverityChange={setSelectedSeverity}
-      />
+      <View>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() =>
+            navigation.navigate('CreateIncident')
+          }
+          style={styles.createButton}
+        >
+          <Text style={styles.createButtonLabel}>
+            + Create incident
+          </Text>
+        </Pressable>
+
+        <IncidentFilters
+          query={query}
+          selectedSeverity={selectedSeverity}
+          onQueryChange={setQuery}
+          onSeverityChange={setSelectedSeverity}
+        />
+      </View>
     ),
-    [query, selectedSeverity],
+    [navigation, query, selectedSeverity],
   );
 
   const emptyState = useMemo(
@@ -148,6 +163,20 @@ export function IncidentsScreen() {
 }
 
 const styles = StyleSheet.create({
+  createButton: {
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    backgroundColor: colors.accent,
+    borderRadius: 11,
+    marginBottom: spacing.md,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+  },
+  createButtonLabel: {
+    color: colors.white,
+    fontSize: 13,
+    fontWeight: '800',
+  },
   content: {
     flexGrow: 1,
     paddingBottom: spacing.xxl,

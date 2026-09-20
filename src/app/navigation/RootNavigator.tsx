@@ -2,6 +2,7 @@ import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import { colors } from '../../design-system/theme/colors';
+import { CreateIncidentScreen } from '../../features/incidents/screens/CreateIncidentScreen';
 import { IncidentDetailsScreen } from '../../features/incidents/screens/IncidentDetailsScreen';
 
 import { MainTabs } from './MainTabs';
@@ -36,7 +37,15 @@ export function RootNavigator() {
         name="IncidentDetails"
         component={IncidentDetailsScreen}
         options={{
-          title: 'Incident details',
+          title: 'Incident command',
+        }}
+      />
+
+      <Stack.Screen
+        name="CreateIncident"
+        component={CreateIncidentScreen}
+        options={{
+          title: 'Create incident',
         }}
       />
     </Stack.Navigator>

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   StyleSheet,
   Text,
@@ -7,28 +7,52 @@ import {
 
 import { colors } from '../../../design-system/theme/colors';
 import { spacing } from '../../../design-system/theme/spacing';
+import type { Incident } from '../../incidents/model/types';
 import {
-  mockServices,
-  type ServiceStatus,
-} from '../data/mockServices';
+  deriveServiceHealth,
+  type ServiceHealthStatus,
+} from '../../incidents/lib/operations';
 
-const statusColors: Record<ServiceStatus, string> = {
+const statusColors: Record<
+  ServiceHealthStatus,
+  string
+> = {
   healthy: colors.success,
   degraded: colors.warning,
   down: colors.danger,
 };
 
+const statusLabels: Record<
+  ServiceHealthStatus,
+  string
+> = {
+  healthy: 'Healthy',
+  degraded: 'Degraded',
+  down: 'Critical',
+};
+
+type Props = {
+  incidents: Incident[];
+};
+
 export const ServiceHealthCard = React.memo(
-  function ServiceHealthCard() {
+  function ServiceHealthCard({
+    incidents,
+  }: Props) {
+    const services = useMemo(
+      () => deriveServiceHealth(incidents),
+      [incidents],
+    );
+
     return (
       <View style={styles.card}>
-        {mockServices.map(service => {
+        {services.map(service => {
           const statusColor =
             statusColors[service.status];
 
           return (
             <View
-              key={service.id}
+              key={service.service}
               style={styles.serviceRow}
             >
               <View style={styles.rowHeader}>
@@ -42,27 +66,27 @@ export const ServiceHealthCard = React.memo(
                     ]}
                   />
 
-                  <Text style={styles.serviceName}>
-                    {service.name}
-                  </Text>
+                  <View>
+                    <Text style={styles.serviceName}>
+                      {service.service}
+                    </Text>
+
+                    <Text style={styles.serviceMeta}>
+                      {service.activeIncidentCount === 0
+                        ? 'No active incidents'
+                        : `${service.activeIncidentCount} active · ${service.highestSeverity}`}
+                    </Text>
+                  </View>
                 </View>
 
-                <Text style={styles.uptime}>
-                  {service.uptime.toFixed(2)}%
-                </Text>
-              </View>
-
-              <View style={styles.progressTrack}>
-                <View
+                <Text
                   style={[
-                    styles.progressBar,
-                    {
-                      backgroundColor: statusColor,
-                      width:
-                        `${service.uptime}%` as `${number}%`,
-                    },
+                    styles.status,
+                    { color: statusColor },
                   ]}
-                />
+                >
+                  {statusLabels[service.status]}
+                </Text>
               </View>
             </View>
           );
@@ -81,7 +105,9 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
   },
   serviceRow: {
-    marginBottom: spacing.lg,
+    borderBottomColor: colors.border,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingVertical: spacing.md,
   },
   rowHeader: {
     alignItems: 'center',
@@ -91,31 +117,27 @@ const styles = StyleSheet.create({
   nameContainer: {
     alignItems: 'center',
     flexDirection: 'row',
+    flex: 1,
+    paddingRight: spacing.md,
   },
   statusDot: {
-    borderRadius: 4,
-    height: 8,
-    marginRight: spacing.sm,
-    width: 8,
+    borderRadius: 5,
+    height: 10,
+    marginRight: spacing.md,
+    width: 10,
   },
   serviceName: {
     color: colors.textPrimary,
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '700',
   },
-  uptime: {
-    color: colors.textSecondary,
+  serviceMeta: {
+    color: colors.textMuted,
+    fontSize: 11,
+    marginTop: spacing.xs,
+  },
+  status: {
     fontSize: 12,
-  },
-  progressTrack: {
-    backgroundColor: colors.surfaceElevated,
-    borderRadius: 4,
-    height: 6,
-    marginTop: spacing.sm,
-    overflow: 'hidden',
-  },
-  progressBar: {
-    borderRadius: 4,
-    height: 6,
+    fontWeight: '800',
   },
 });

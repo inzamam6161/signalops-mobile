@@ -12,28 +12,41 @@ import { colors } from '../design-system/theme/colors';
 import { navigationTheme } from '../design-system/theme/navigationTheme';
 import { useIncidentSimulation } from '../features/incidents/hooks/useIncidentSimulation';
 import { AppBootstrapScreen } from '../shared/components/app/AppBootstrapScreen';
+import { usePersistedIncidents } from './hooks/usePersistedIncidents';
 import { usePersistedPreferences } from './hooks/usePersistedPreferences';
 import { RootNavigator } from './navigation/RootNavigator';
 import { store } from './store/store';
 
 function AppContent() {
-  const {
-    status,
-    error,
-    retry,
-  } = usePersistedPreferences();
+  const preferences =
+    usePersistedPreferences();
+  const workspace =
+    usePersistedIncidents();
 
   useIncidentSimulation();
 
-  if (status === 'loading') {
+  const loading =
+    preferences.status === 'loading' ||
+    workspace.status === 'loading';
+
+  if (loading) {
     return <AppBootstrapScreen />;
   }
 
-  if (status === 'error') {
+  if (preferences.status === 'error') {
     return (
       <AppBootstrapScreen
-        error={error}
-        onRetry={retry}
+        error={preferences.error}
+        onRetry={preferences.retry}
+      />
+    );
+  }
+
+  if (workspace.status === 'error') {
+    return (
+      <AppBootstrapScreen
+        error={workspace.error}
+        onRetry={workspace.retry}
       />
     );
   }

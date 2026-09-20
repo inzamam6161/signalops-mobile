@@ -11,4 +11,6 @@ export type RootStackParamList = {
   IncidentDetails: {
     incidentId: string;
   };
+
+  CreateIncident: undefined;
 };

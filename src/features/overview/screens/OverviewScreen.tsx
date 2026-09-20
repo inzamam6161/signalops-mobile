@@ -4,27 +4,35 @@ import React, {
 } from 'react';
 import {
   FlatList,
+  Pressable,
   StyleSheet,
   Text,
   View,
   type ListRenderItem,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type {
+  NativeStackNavigationProp,
+} from '@react-navigation/native-stack';
 
-import type { RootStackParamList } from '../../../app/navigation/types';
+import type {
+  RootStackParamList,
+} from '../../../app/navigation/types';
 import { useAppSelector } from '../../../app/store/hooks';
 import { colors } from '../../../design-system/theme/colors';
 import { spacing } from '../../../design-system/theme/spacing';
 import { IncidentListItem } from '../../incidents/components/IncidentListItem';
+import {
+  formatDuration,
+  getOperationalMetrics,
+} from '../../incidents/lib/operations';
 import type { Incident } from '../../incidents/model/types';
 import { Screen } from '../../../shared/components/Screen';
 import { MetricCard } from '../components/MetricCard';
 import { ServiceHealthCard } from '../components/ServiceHealthCard';
 
-type Navigation = NativeStackNavigationProp<
-  RootStackParamList
->;
+type Navigation =
+  NativeStackNavigationProp<RootStackParamList>;
 
 export function OverviewScreen() {
   const navigation = useNavigation<Navigation>();
@@ -33,19 +41,8 @@ export function OverviewScreen() {
     state => state.incidents.items,
   );
 
-  const activeCount = useMemo(
-    () =>
-      incidents.filter(
-        incident => incident.status !== 'resolved',
-      ).length,
-    [incidents],
-  );
-
-  const resolvedCount = useMemo(
-    () =>
-      incidents.filter(
-        incident => incident.status === 'resolved',
-      ).length,
+  const metrics = useMemo(
+    () => getOperationalMetrics(incidents),
     [incidents],
   );
 
@@ -82,18 +79,57 @@ export function OverviewScreen() {
   const dashboardHeader = useMemo(
     () => (
       <View>
-        <Text style={styles.sectionTitle}>Overview</Text>
+        <View style={styles.titleRow}>
+          <View>
+            <Text style={styles.sectionTitle}>
+              Operations
+            </Text>
+            <Text style={styles.sectionSubtitle}>
+              Live incident workspace
+            </Text>
+          </View>
+
+          <Pressable
+            accessibilityRole="button"
+            onPress={() =>
+              navigation.navigate('CreateIncident')
+            }
+            style={styles.createButton}
+          >
+            <Text style={styles.createButtonLabel}>
+              + New incident
+            </Text>
+          </Pressable>
+        </View>
 
         <View style={styles.metricsRow}>
           <MetricCard
-            label="Active incidents"
-            value={activeCount}
+            label="Active"
+            value={metrics.active}
             tone="danger"
           />
 
           <MetricCard
-            label="Resolved incidents"
-            value={resolvedCount}
+            label="P1 critical"
+            value={metrics.critical}
+            tone="danger"
+          />
+        </View>
+
+        <View style={styles.metricsRowSecondary}>
+          <MetricCard
+            label="SLA breached"
+            value={metrics.breached}
+            tone={
+              metrics.breached > 0
+                ? 'danger'
+                : 'success'
+            }
+          />
+
+          <MetricCard
+            label="MTTR"
+            value={formatDuration(metrics.mttr)}
             tone="success"
           />
         </View>
@@ -102,20 +138,26 @@ export function OverviewScreen() {
           Service health
         </Text>
 
-        <ServiceHealthCard />
+        <Text style={styles.sectionSubtitle}>
+          Derived from active incident severity
+        </Text>
+
+        <ServiceHealthCard
+          incidents={incidents}
+        />
 
         <Text style={styles.sectionTitle}>
           Recent incidents
         </Text>
       </View>
     ),
-    [activeCount, resolvedCount],
+    [incidents, metrics, navigation],
   );
 
   return (
     <Screen
-      title="Good morning, Inzamam"
-      subtitle="Here's what's happening with your systems."
+      title="SignalOps"
+      subtitle="Incident response command center."
     >
       <FlatList
         data={recentIncidents}
@@ -136,15 +178,43 @@ const styles = StyleSheet.create({
   listContent: {
     paddingBottom: spacing.xxl,
   },
+  titleRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: spacing.lg,
+  },
   sectionTitle: {
     color: colors.textPrimary,
     fontSize: 16,
     fontWeight: '700',
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
     marginTop: spacing.xl,
+  },
+  sectionSubtitle: {
+    color: colors.textMuted,
+    fontSize: 12,
+    marginBottom: spacing.md,
+  },
+  createButton: {
+    backgroundColor: colors.accent,
+    borderRadius: 11,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  createButtonLabel: {
+    color: colors.white,
+    fontSize: 12,
+    fontWeight: '800',
   },
   metricsRow: {
     flexDirection: 'row',
     gap: spacing.md,
+    marginTop: spacing.md,
+  },
+  metricsRowSecondary: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    marginTop: spacing.md,
   },
 });
