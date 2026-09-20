@@ -23,6 +23,9 @@ import { useAppSelector } from '../../../app/store/hooks';
 import { colors } from '../../../design-system/theme/colors';
 import { spacing } from '../../../design-system/theme/spacing';
 import { Screen } from '../../../shared/components/Screen';
+import {
+  severityColors,
+} from '../../incidents/lib/presentation';
 import type {
   IncidentEventType,
   IncidentSeverity,
@@ -78,8 +81,26 @@ function ActivityRow({
       ]}
     >
       <View style={styles.headerRow}>
-        <View style={styles.severityBadge}>
-          <Text style={styles.severityText}>
+        <View
+          style={[
+            styles.severityBadge,
+            {
+              backgroundColor:
+                `${severityColors[item.severity]}20`,
+              borderColor:
+                severityColors[item.severity],
+            },
+          ]}
+        >
+          <Text
+            style={[
+              styles.severityText,
+              {
+                color:
+                  severityColors[item.severity],
+              },
+            ]}
+          >
             {item.severity}
           </Text>
         </View>
@@ -264,13 +285,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   severityBadge: {
-    backgroundColor: colors.surfaceElevated,
     borderRadius: 7,
+    borderWidth: 1,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
   },
   severityText: {
-    color: colors.accent,
     fontSize: 11,
     fontWeight: '800',
   },

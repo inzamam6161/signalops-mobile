@@ -8,31 +8,18 @@ import {
 
 import { colors } from '../../../design-system/theme/colors';
 import { spacing } from '../../../design-system/theme/spacing';
+import {
+  severityColors,
+  statusColors,
+} from '../lib/presentation';
 import type {
   Incident,
-  IncidentSeverity,
   IncidentStatus,
 } from '../model/types';
 
 type IncidentListItemProps = {
   incident: Incident;
   onPress: (incidentId: string) => void;
-};
-
-const severityColors: Record<
-  IncidentSeverity,
-  string
-> = {
-  P1: colors.danger,
-  P2: colors.warning,
-  P3: '#4D8DFF',
-};
-
-const statusColors: Record<IncidentStatus, string> = {
-  ongoing: colors.danger,
-  investigating: colors.warning,
-  monitoring: '#4D8DFF',
-  resolved: colors.success,
 };
 
 function formatStatus(status: IncidentStatus) {

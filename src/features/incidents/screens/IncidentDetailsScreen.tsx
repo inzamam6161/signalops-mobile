@@ -33,6 +33,10 @@ import {
   generatePostmortem,
   getIncidentSla,
 } from '../lib/operations';
+import {
+  severityColors,
+  statusColors,
+} from '../lib/presentation';
 import type {
   IncidentStatus,
   IncidentTimelineEvent,
@@ -241,13 +245,29 @@ export function IncidentDetailsScreen({
       >
         <View style={styles.card}>
           <View style={styles.headerRow}>
-            <View style={styles.severityBadge}>
+            <View
+              style={[
+                styles.severityBadge,
+                {
+                  backgroundColor:
+                    severityColors[incident.severity],
+                },
+              ]}
+            >
               <Text style={styles.severityText}>
                 {incident.severity}
               </Text>
             </View>
 
-            <Text style={styles.status}>
+            <Text
+              style={[
+                styles.status,
+                {
+                  color:
+                    statusColors[incident.status],
+                },
+              ]}
+            >
               {incident.status.toUpperCase()}
             </Text>
           </View>
@@ -277,7 +297,8 @@ export function IncidentDetailsScreen({
             />
           </View>
 
-          {incident.owner === 'Unassigned' ? (
+          {incident.owner === 'Unassigned' &&
+          incident.status !== 'resolved' ? (
             <Pressable
               accessibilityRole="button"
               onPress={assignToMe}
@@ -362,9 +383,17 @@ export function IncidentDetailsScreen({
               Response runbook
             </Text>
 
-            <Text style={styles.progressText}>
-              {completedRunbook}/{incident.runbook.length}
-            </Text>
+            <View style={styles.runbookMeta}>
+              {incident.status === 'resolved' ? (
+                <Text style={styles.readOnlyLabel}>
+                  Read only
+                </Text>
+              ) : null}
+
+              <Text style={styles.progressText}>
+                {completedRunbook}/{incident.runbook.length}
+              </Text>
+            </View>
           </View>
 
           {incident.runbook.map(item => (
@@ -372,7 +401,12 @@ export function IncidentDetailsScreen({
               accessibilityRole="checkbox"
               accessibilityState={{
                 checked: item.completed,
+                disabled:
+                  incident.status === 'resolved',
               }}
+              disabled={
+                incident.status === 'resolved'
+              }
               key={item.id}
               onPress={() =>
                 toggleRunbook(item.id)
@@ -404,36 +438,38 @@ export function IncidentDetailsScreen({
           ))}
         </View>
 
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>
-            Operator note
-          </Text>
-
-          <TextInput
-            accessibilityLabel="Operator note"
-            multiline
-            onChangeText={setNote}
-            placeholder="Add mitigation, investigation or stakeholder update..."
-            placeholderTextColor={colors.textMuted}
-            style={styles.noteInput}
-            value={note}
-          />
-
-          <Pressable
-            accessibilityRole="button"
-            disabled={note.trim().length < 3}
-            onPress={addNote}
-            style={[
-              styles.secondaryButton,
-              note.trim().length < 3 &&
-                styles.disabled,
-            ]}
-          >
-            <Text style={styles.secondaryButtonLabel}>
-              Add note to timeline
+        {incident.status !== 'resolved' ? (
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>
+              Operator note
             </Text>
-          </Pressable>
-        </View>
+
+            <TextInput
+              accessibilityLabel="Operator note"
+              multiline
+              onChangeText={setNote}
+              placeholder="Add mitigation, investigation or stakeholder update..."
+              placeholderTextColor={colors.textMuted}
+              style={styles.noteInput}
+              value={note}
+            />
+
+            <Pressable
+              accessibilityRole="button"
+              disabled={note.trim().length < 3}
+              onPress={addNote}
+              style={[
+                styles.secondaryButton,
+                note.trim().length < 3 &&
+                  styles.disabled,
+              ]}
+            >
+              <Text style={styles.secondaryButtonLabel}>
+                Add note to timeline
+              </Text>
+            </Pressable>
+          </View>
+        ) : null}
 
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>
@@ -610,7 +646,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   severityBadge: {
-    backgroundColor: colors.danger,
     borderRadius: 8,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
@@ -621,7 +656,6 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   status: {
-    color: colors.warning,
     fontSize: 12,
     fontWeight: '700',
   },
@@ -707,6 +741,17 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontSize: 10,
     marginTop: spacing.xs,
+  },
+  runbookMeta: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  readOnlyLabel: {
+    color: colors.success,
+    fontSize: 10,
+    fontWeight: '800',
+    textTransform: 'uppercase',
   },
   progressText: {
     color: colors.accent,

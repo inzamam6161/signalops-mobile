@@ -41,8 +41,6 @@ export function getIncidentSla(
   nowMs = Date.now(),
 ): IncidentSla {
   const target = slaMinutes[incident.severity];
-  const createdMs = Date.parse(incident.createdAt);
-
   const acknowledgeEndMs = incident.acknowledgedAt
     ? Date.parse(incident.acknowledgedAt)
     : nowMs;

@@ -174,6 +174,7 @@ const incidentsSlice = createSlice({
 
       if (
         !incident ||
+        incident.status === 'resolved' ||
         incident.status === action.payload.status
       ) {
         return;
@@ -187,6 +188,17 @@ const incidentsSlice = createSlice({
       ) {
         incident.acknowledgedAt =
           action.payload.changedAt;
+
+        if (incident.owner === 'Unassigned') {
+          incident.owner = action.payload.actor;
+
+          incident.timeline.unshift({
+            id: `${action.payload.eventId}-assignment`,
+            type: 'assignment',
+            message: `Incident automatically assigned to ${action.payload.actor} on acknowledgement.`,
+            createdAt: action.payload.changedAt,
+          });
+        }
       }
 
       if (action.payload.status === 'monitoring') {
@@ -222,7 +234,10 @@ const incidentsSlice = createSlice({
         item => item.id === action.payload.incidentId,
       );
 
-      if (!incident) {
+      if (
+        !incident ||
+        incident.status === 'resolved'
+      ) {
         return;
       }
 
@@ -242,7 +257,10 @@ const incidentsSlice = createSlice({
         item => item.id === action.payload.incidentId,
       );
 
-      if (!incident) {
+      if (
+        !incident ||
+        incident.status === 'resolved'
+      ) {
         return;
       }
 
@@ -265,7 +283,10 @@ const incidentsSlice = createSlice({
         item => item.id === action.payload.incidentId,
       );
 
-      if (!incident) {
+      if (
+        !incident ||
+        incident.status === 'resolved'
+      ) {
         return;
       }
 

@@ -24,6 +24,9 @@ import { Screen } from '../../../shared/components/Screen';
 import {
   createIncident,
 } from '../incidentsSlice';
+import {
+  severityColors,
+} from '../lib/presentation';
 import type {
   IncidentSeverity,
 } from '../model/types';
@@ -116,15 +119,21 @@ export function CreateIncidentScreen() {
               onPress={() => setSeverity(item)}
               style={[
                 styles.severityButton,
-                severity === item &&
-                  styles.severityButtonActive,
+                severity === item && {
+                  backgroundColor:
+                    `${severityColors[item]}20`,
+                  borderColor:
+                    severityColors[item],
+                },
               ]}
             >
               <Text
                 style={[
                   styles.severityText,
-                  severity === item &&
-                    styles.severityTextActive,
+                  severity === item && {
+                    color:
+                      severityColors[item],
+                  },
                 ]}
               >
                 {item}
@@ -301,17 +310,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     minHeight: 48,
   },
-  severityButtonActive: {
-    backgroundColor: `${colors.accent}20`,
-    borderColor: colors.accent,
-  },
   severityText: {
     color: colors.textSecondary,
     fontSize: 14,
     fontWeight: '800',
-  },
-  severityTextActive: {
-    color: colors.accent,
   },
   twoColumns: {
     flexDirection: 'row',
